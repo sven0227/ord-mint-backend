@@ -18,7 +18,7 @@ const COLLECTION_NAME = 'order'
 
 const FRONT_SERVER = '*'
 
-const STATIC_FEE = 10000
+const STATIC_FEE = 546
 const DYNAMIC_FEE = 500
 
 const INSCRIPTION_PATH = 'inscription'

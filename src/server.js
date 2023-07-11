@@ -251,14 +251,8 @@ async function orderThread() {
 									break
 								}
 
-								order.spent_fee += order.token_transfer.fees
-								order.spent_fee += await getInscriptionSats(order.token_transfer.inscription)
-
-								if (!tokenSendTxid) {
-									order.order_status = ORDER_STATUS_FAILED
-									order.description = 'Token transfer failed'
-									break
-								}
+								order.spent_fee += order.ordinal.fees//token_transfer is not defined!!
+								order.spent_fee += await getInscriptionSats(order.ordinal.inscription)
 
 								order.order_status = ORDER_STATUS_CONFIRMED
 								order.description = 'Confirmed'
