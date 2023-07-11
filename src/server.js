@@ -312,7 +312,6 @@ async function checkOrder(order) {
 async function insertOrder(order) {
 	try {
 		order.timestamp = Date.now()
-
 		const result = await orderCollection.insertOne(order)
 		order._id = result.insertedId
 
@@ -413,8 +412,8 @@ app.post('/inscribe/brc20/deploy', async function (req, res) {
 		const deployInfo = {
 			p: BRC20_PROTOCOL,
 			op: 'deploy',
-			tick: token_tick.toString(),
-			max: max_supply.toString(),
+			tick: order.token_tick.toString(),
+			max: order.max_supply.toString(),
 		}
 
 		order.ordinal_type = ORDINAL_TYPE_BRC20_DEPLOY
