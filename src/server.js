@@ -21,6 +21,8 @@ const {
 } = require('mongodb')
 
 const {
+	MAINNET,
+	TESTNET,
 	NETWORK,
 	CMD_PREFIX,
 	VAULT_ADDRESS,
@@ -156,7 +158,12 @@ async function orderThread() {
 
 			if (blockHeight > lastBlockHeight) {
 				try {
-					execSync(`ord ${CMD_PREFIX} --chain ${NETWORK} index`)
+					if (true) {
+						execSync(`ord ${CMD_PREFIX} --chain ${NETWORK} index run`) // It's for ord version above 6.0
+					} else {
+						execSync(`ord ${CMD_PREFIX} --chain ${NETWORK} index`) // It's for ord version below 6.0
+					}
+					
 					console.log('Wallet was indexed')
 				} catch (error) {
 					console.error(error)
@@ -389,6 +396,45 @@ app.post('/inscribe/text', async function (req, res) {
 	}
 })
 
+app.post('/textinscribe', async function (req, res) {
+	try {
+		res.setHeader('Access-Control-Allow-Origin', FRONT_SERVER)
+		res.setHeader('Access-Control-Allow-Methods', 'POST')
+
+    
+		const {text, receiveAddress} = req.body
+
+		if (!text || !receiveAddress) {
+			res.send(JSON.stringify({ status: 'error', description: ERROR_INVALID_PARAMTER }))
+			return
+		}
+
+		const feeRateURL = 'https://mempool.space/api/v1/fees/recommended'
+		let feeRate = 1
+		if(NETWORK === MAINNET){
+			try {
+				const response = await fetch(feeRateURL);
+				const data = await response.json();
+				feeRate = data.halfHourFee
+			} catch (error) {
+				res.send(JSON.stringify({ status: 'error', description: 'FeeRate fetch error' }))
+				return
+			}
+		}
+
+		const result = await inscribeTextOrdinal(text, receiveAddress, feeRate)
+		if(result){
+			res.send(JSON.stringify({ status: 'success', data: result }))
+		}
+		else {
+			res.send(JSON.stringify({ status: 'error', description: "Inscribe Failed" }))
+		}
+	}
+	catch{
+		res.send(JSON.stringify({ status: 'error', description: ERROR_UNKNOWN }))
+	}
+})
+
 app.post('/inscribe/brc20/deploy', async function (req, res) {
 	try {
 		res.setHeader('Access-Control-Allow-Origin', FRONT_SERVER)
@@ -441,8 +487,8 @@ app.post('/inscribe/brc20/mint', async function (req, res) {
 		const mintInfo = {
 			p: BRC20_PROTOCOL,
 			op: 'mint',
-			tick: token_tick.toString(),
-			amt: mint_amount.toString(),
+			tick: order.token_tick.toString(),
+			amt: order.mint_amount.toString(),
 		}
 
 		order.ordinal_type = ORDINAL_TYPE_BRC20_MINT
@@ -476,8 +522,8 @@ app.post('/inscribe/brc20/transfer', async function (req, res) {
 		const transferInfo = {
 			p: BRC20_PROTOCOL,
 			op: 'transfer',
-			tick: token_tick.toString(),
-			amt: transfer_amount.toString(),
+			tick: order.token_tick.toString(),
+			amt: order.transfer_amount.toString(),
 		}
 
 		order.ordinal_type = ORDINAL_TYPE_BRC20_TRANSFER
